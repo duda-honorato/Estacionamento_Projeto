@@ -1,182 +1,166 @@
-## 1. Título do projeto:
+# Detecção de Vagas Disponíveis em Estacionamentos por Processamento Digital de Imagens
 
-Detecção de Vagas Disponíveis em Estacionamentos por Processamento Digital de Imagens
- 
-## 2. Integrantes:
-* João Matheus de Oliveira Vieira
-* Maria Eduarda de Melo Honorato
-* Scheila Carolini da Silva Ceresa
-  
-## 3. Problema investigado:
-Em estacionamentos com grande quantidade de vagas, a identificação visual da disponibilidade é frequentemente ineficiente, especialmente em horários de pico. A movimentação constante de veículos torna o processo ainda mais desafiador.
+## Integrantes
 
-Diante disso, propomos responder à seguinte pergunta:
-**Como utilizar técnicas de Processamento Digital de Imagens para identificar automaticamente vagas de estacionamento livres e ocupadas a partir de uma imagem capturada por uma câmera?**
+- João Matheus de Oliveira Vieira
+- Maria Eduarda de Melo Honorato
+- Scheila Carolini da Silva Ceresa
 
-## 4. Contexto de aplicação:
-| Tipo | Descrição |
-|---|---|
-| **Ambiente** | Estacionamentos controlados com vagas delimitadas e padronizadas (shoppings, aeroportos, hospitais, universidades, edifícios comerciais) |
-| **Formato de saída** | Valor booleano: `1` (ocupada) ou `0` (vazia) para cada vaga analisada |
-| **Formato de entrada** | Imagens no formato PNG, encontradas no Dataset |
+## Descrição do projeto
 
-## 5. Objetivo geral:
-Desenvolver uma solução baseada em Processamento Digital de Imagens (PDI) para identificar automaticamente se vagas de estacionamento estão livres ou ocupadas, a partir de imagens capturadas por câmeras.
+Este projeto tem como objetivo desenvolver uma solução de Processamento Digital de Imagens (PDI) capaz de identificar vagas de estacionamento livres e ocupadas a partir de imagens capturadas por câmeras.
 
-## 6. Visão resumida da solução proposta:
-A solução é dividida em três fases principais, formando um pipeline de processamento de imagens:
-## FASE 1: Detecção e Delimitação das Vagas
+A proposta busca utilizar técnicas tradicionais de processamento de imagens para analisar regiões correspondentes às vagas e determinar seu estado de ocupação.
 
-**Objetivo:** Identificar na imagem quais regiões correspondem a vagas de estacionamento.
+O projeto é desenvolvido de forma incremental ao longo das etapas M1, M2 e M3 da disciplina de Processamento de Imagens.
 
-- **Pré-processamento da Imagem**
-    
-    - Conversão para escala de cinza (`Imgproc.cvtColor()`)
-        
-    - Aplicação de filtro Gaussiano (`Imgproc.GaussianBlur()`) ou mediana (`Imgproc.medianBlur()`)
-        
-    - Detecção de bordas com Canny (`Imgproc.Canny()`) ou Sobel (`Imgproc.Sobel()`)
-        
-- **Detecção de Contornos e Formas Retangulares**
-    
-    - Uso de `Imgproc.findContours()` para extração de contornos
-        
-    - Filtragem por polígono aproximado (`Imgproc.approxPolyDP()`)
-        
-    - Manutenção apenas de contornos com 4 vértices (retângulos/paralelogramos)
-        
-- **Filtragem por Padrões de Tamanho**
-    
-    - Cálculo de área, largura e altura de cada retângulo candidato usando `Imgproc.boundingRect()`
-        
-    - Comparação com padrões pré-definidos (ex: comprimento entre 150-250px, largura entre 60-100px)
-        
-    - Valores calibrados conforme a perspectiva da câmera
-        
-    - Aplicação de relação de aspecto característica de vagas
-        
-- **Organização Espacial**
-    
-    - Ordenação dos retângulos em linhas/colunas (grid)
-        
-    - Atribuição de ID único para cada vaga (ex: Vaga_01, Vaga_02...)
-        
-    - Armazenamento das coordenadas em `HashMap<Integer, Rect>`
-        
+## Problema investigado
 
-## FASE 2: Extração das Vagas e Pré-processamento
+Em estacionamentos com grande quantidade de vagas, a identificação visual de espaços disponíveis pode ser ineficiente, especialmente em horários de maior movimentação.
 
-**Objetivo:** Isolar cada vaga e prepará-la para análise de ocupação.
+Diante disso, o projeto investiga a seguinte questão:
 
-- **Recorte das Regiões de Interesse (ROI)**
-    
-    - Para cada vaga detectada, recortar a subimagem correspondente usando `new Mat(image, rect)`
-        
-    - Imagem em escala de cinza para processamento
-        
-- **Normalização**
-    
-    - Redimensionamento para tamanho padrão (ex: 100x50 px) com `Imgproc.resize()`
-        
-    - Aplicação de equalização de histograma com `Imgproc.equalizeHist()`
-        
+**Como utilizar técnicas de Processamento Digital de Imagens para identificar automaticamente vagas de estacionamento livres e ocupadas em imagens capturadas por câmeras?**
 
-## FASE 3: Classificação Ocupado vs Vazio
+## Objetivo geral
 
-**Objetivo:** Determinar se a vaga está ocupada baseado em análise de textura.
+Desenvolver e avaliar uma solução em Python e OpenCV para classificar vagas de estacionamento previamente delimitadas como livres ou ocupadas.
 
-- **Métrica de "Sujeira/Ocupação"**
-    
-    - Desvio Padrão dos Pixels:
-        
-        - Vagas vazias → baixa variação (superfície uniforme do asfalto)
-            
-        - Vagas ocupadas → alta variação (texturas, sombras, cores do veículo)
-            
-    - Implementação usando `Core.meanStdDev()` para cálculo eficiente
-        
-- **Métricas Complementares (Opcionais)**
-    
-    - Análise de energia ou entropia (matriz de co-ocorrência - GLCM)
-        
-    - Contagem de bordas internas (mais bordas = ocupado)
-        
-- **Limiarização Dinâmica**
-    
-    - Cálculo do desvio padrão médio das vagas vazias em imagem de referência
-        
-    - Definição de limiar adaptativo: se desvio > limiar → ocupado
+## Objetivos específicos
 
-Por fim, em relação a solução, a mesma apresenta limitações como:
-- Não identifica o tipo de objeto ocupante (veículo, cone, lixeira, etc.)  
-- Não trata sobreposição parcial de objetos  
-- Não considera diferentes posições ou tamanhos de veículos  
-- Não é aplicável em ambientes não estruturados (vagas sem demarcação, formatos irregulares, perspectivas distorcidas)
+- Selecionar imagens de estacionamentos capturadas por câmeras fixas.
+- Identificar e delimitar as regiões correspondentes às vagas.
+- Extrair as regiões de interesse (ROI) das imagens.
+- Aplicar técnicas de pré-processamento.
+- Calcular características visuais, como desvio-padrão e densidade de bordas.
+- Implementar métodos de classificação por limiar.
+- Comparar os resultados obtidos com referências de ocupação.
+- Avaliar os métodos por meio de métricas quantitativas e análise de erros.
 
-## 7. Conjunto ou origem das imagens:
+## Evolução do escopo
 
-Utilizado as imagens do site: 
+### M1 — Proposta inicial
 
-[Dataset_Kaggle](https://www.kaggle.com/datasets/trainingdatapro/parking-space-detection-dataset?resource=download)
+Na M1, foi proposta uma solução em Java e OpenCV, dividida em três fases: detecção automática das vagas, extração das regiões de interesse e classificação de ocupação.
 
-Licença para uso das imagens: 
+A etapa foi dedicada à definição do problema, planejamento do pipeline e identificação das tecnologias.
 
-Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)
+### M2 — Implementação parcial e avaliação
 
-## 8. Estágio atual do projeto:
+Após a devolutiva da M1, o escopo foi ajustado para reduzir a complexidade inicial e permitir uma avaliação experimental.
 
-O projeto ainda não foi iniciado; estamos apenas na fase de idealização da solução.
+As principais mudanças são:
 
-## 9. Tecnologias previstas ou já utilizadas:
-    
-|**Tecnologia**|**Descrição**|
-|---|---|
-|**Java 11+**|Linguagem de programação principal|
-|**OpenCV 4.5+**|Processamento de imagem e visão computacional|
-|**Maven/Gradle**|Gerenciamento de dependências|
+- Substituição de Java por Python.
+- Utilização da biblioteca OpenCV para Python.
+- Delimitação manual das vagas no resultado mínimo.
+- Comparação entre métodos baseados em desvio-padrão e densidade de bordas.
+- Definição experimental dos limiares de classificação.
+- Avaliação com imagens e rótulos de referência.
 
-Optamos por essas tecnologias por serem de domínio do grupo, garantindo agilidade no desenvolvimento. A escolha também é compatível com a abordagem adotada, que utiliza métodos tradicionais de PDI, dispensando o uso de bibliotecas mais complexas.
+A detecção automática das vagas poderá ser investigada em etapas futuras.
 
-## 10. link para o vídeo da M1: 
-https://youtu.be/5l5vSYWoiJw
+## Conjunto de imagens
 
-## 11. Declaração de Uso de Inteligência Artificial
+O projeto prevê utilizar o dataset PKLot, desenvolvido com imagens de estacionamentos capturadas por câmeras fixas.
 
-Neste projeto, utilizamos ferramentas de Inteligência Artificial (IA) como recurso complementar para auxiliar no desenvolvimento das atividades. A IA foi empregada principalmente para:
+Fonte: https://web.inf.ufpr.br/luizoliveira/research-interests/pklot/
 
-- Aprimoramento da escrita: correção gramatical, revisão de texto e sugestões de clareza e coesão;
+O conjunto contém imagens de diferentes perspectivas e condições ambientais, além de anotações que permitem identificar as regiões das vagas e seus estados de ocupação.
 
-- Organização de ideias: estruturação de argumentos e aprimoramento da fluidez textual;
+Na M2, será selecionado um subconjunto de imagens de uma mesma câmera para os experimentos.
 
-- Verificação de parâmetros: consultamos se o objeto precisava de parâmetros além dos iniciais, e foi sugerido utilizar as seguintes métricas na Fase 3: análise de energia ou entropia (matriz de co-ocorrência - GLCM) e contagem de bordas internas (mais bordas = ocupado).
+A seleção final das imagens, os identificadores, a divisão entre calibração e avaliação e as condições observadas serão documentados no relatório da M2.
 
-Ressaltamos que todo o conteúdo final foi analisado, validado e adaptado pelos integrantes do grupo, garantindo a originalidade, coerência e responsabilidade sobre as informações apresentadas. A IA atuou como uma ferramenta de apoio, e não como substituta do pensamento crítico e da autoria humana.
+A licença e as condições de redistribuição dos arquivos serão verificadas antes da inclusão de imagens originais no repositório público.
 
-## 12. 0rganização do repositório: 
-Como estamos idealizando a solução, nada foi iniciado ainda; acreditamos que será isso.
+## Pipeline proposto para a M2
 
+### Etapa 1 — Leitura das imagens
 
-```bash
-│
-├── src/
-│   ├── etapas/
-│   │   ├── fase1.java
-│   │   ├── fase2.java
-│   │   └── fase3.java
-│   │
-│   ├── model/
-│   │   └── vagaEstacionamento.java
-│   │
-│   ├── util/
-│   │   └── utils.java
-│   │
-│   └── Main.java
-│
+Carregar imagens do estacionamento utilizando OpenCV.
+
+### Etapa 2 — Delimitação das vagas
+
+Utilizar coordenadas previamente definidas para identificar as regiões correspondentes às vagas.
+
+### Etapa 3 — Extração das regiões de interesse
+
+Recortar as regiões de interesse e aplicar o pré-processamento necessário.
+
+### Etapa 4 — Extração de características
+
+Calcular características visuais de cada vaga, incluindo:
+
+- Desvio-padrão dos níveis de intensidade.
+- Densidade de bordas detectadas pelo algoritmo Canny.
+
+### Etapa 5 — Classificação
+
+Utilizar limiares definidos experimentalmente para classificar cada vaga:
+
+- `0`: vaga livre.
+- `1`: vaga ocupada.
+
+### Etapa 6 — Avaliação
+
+Comparar os resultados previstos com os rótulos de referência, utilizando métricas como acurácia, precisão, revocação e matriz de confusão.
+
+Os experimentos também deverão apresentar casos de acerto, falha e limitações dos métodos.
+
+## Tecnologias
+
+- Python 3
+- OpenCV
+- NumPy
+- pytest
+- Git e GitHub
+- Visual Studio Code
+
+## Estrutura do projeto
+
+```text
+M1_Pt1/
+├── data/
+│   ├── annotations/
+│   └── results/
+├── docs/
+│   ├── proposta.md
+│   ├── relatorio_m2.md
+│   └── AI_USAGE.md
 ├── images/
 │   ├── input/
-│   │   └── img.png (Dataset)
 │   └── output/
-│
-├── README.md
+├── src/
+│   └── estacionamento/
+├── tests/
 ├── .gitignore
-└── pom.xml
+├── README.md
+└── requirements.txt
+```
+
+A estrutura será construída progressivamente conforme as funcionalidades forem implementadas.
+
+## Instalação e execução
+
+As instruções de instalação, configuração do ambiente virtual e execução serão adicionadas e verificadas durante o desenvolvimento da M2.
+
+## Limitações previstas
+
+- Dependência de vagas previamente delimitadas.
+- Sensibilidade a sombras, iluminação e condições climáticas.
+- Possíveis erros com veículos de cores semelhantes ao piso.
+- Dificuldade com oclusões e objetos parcialmente posicionados nas vagas.
+- Necessidade de recalibrar coordenadas quando houver mudança de câmera ou perspectiva.
+
+## Vídeo da M1
+
+https://youtu.be/5l5vSYWoiJw
+
+## Uso de inteligência artificial
+
+Ferramentas de IA foram utilizadas como apoio à revisão textual, organização da documentação e discussão de alternativas técnicas.
+
+Na M2, o uso de IA para apoio ao desenvolvimento será documentado, incluindo as sugestões recebidas, as modificações realizadas e as verificações executadas pelo grupo.
+
+As decisões, implementações e avaliações são de responsabilidade dos integrantes.
