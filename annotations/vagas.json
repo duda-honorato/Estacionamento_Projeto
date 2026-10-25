@@ -6,20 +6,20 @@
             "x": 462,
             "y": 259,
             "largura": 53,
-            "altura": 61
+            "altura": 49
         },
         {
             "id": "vaga_02",
             "x": 538,
             "y": 258,
             "largura": 50,
-            "altura": 65
+            "altura": 50
         },
         {
             "id": "vaga_03",
             "x": 611,
             "y": 253,
-            "largura": 49,
+            "largura": 55,
             "altura": 69
         },
         {
@@ -27,21 +27,21 @@
             "x": 685,
             "y": 253,
             "largura": 50,
-            "altura": 69
+            "altura": 55
         },
         {
             "id": "vaga_05",
             "x": 762,
             "y": 253,
             "largura": 49,
-            "altura": 69
+            "altura": 55
         },
         {
             "id": "vaga_06",
             "x": 837,
             "y": 254,
             "largura": 55,
-            "altura": 69
+            "altura": 54
         }
     ]
 }
