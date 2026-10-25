@@ -79,7 +79,7 @@ A licença e as condições de redistribuição dos arquivos devem ser verificad
 
 As vagas são marcadas manualmente sobre uma imagem de referência (`3.png`, estacionamento vazio) com `cv2.selectROI`. As coordenadas ficam em `annotations/vagas.json` (`x`, `y`, `largura`, `altura`).
 
-Os retângulos terminam logo acima da faixa de grama (y = 308) para não incluir os veículos da fileira seguinte, que aumentavam artificialmente as bordas e o desvio-padrão das vagas livres.
+Os retângulos terminam logo acima da faixa de grama (y = 308) para não incluir os veículos da fileira seguinte, que aumentavam artificialmente as bordas e o desvio-padrão das vagas livres. A exceção é a `vaga_03`, que vai até y = 322 e ainda inclui parte da grama e da fileira de baixo.
 
 ### Etapa 2 — Rotulagem de referência
 
