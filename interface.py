@@ -1,4 +1,5 @@
 import csv
+import json
 import os
 import queue
 import subprocess
@@ -30,7 +31,7 @@ PADROES = {
     "clahe": False,
     "sem_morfologia": False,
     "atributo": "densidade_bordas",
-    "limiar": "",
+    "limiar": "0,076",
 }
 
 def montar_ambiente() -> dict[str, str]:
@@ -108,8 +109,76 @@ def executar(comando: list[str], imprimir) -> int:
     return processo.wait()
 
 
+# ---------------------------------------------------------------------------
+# Métricas
+# ---------------------------------------------------------------------------
+
+def contar_matriz(referencias: list[int], previstas: list[int]) -> dict[str, int]:
+    """Conta VP, FP, FN e VN. Classe positiva = ocupada (1)."""
+    pares = list(zip(referencias, previstas))
+    return {
+        "VP": sum(r == 1 and p == 1 for r, p in pares),
+        "FP": sum(r == 0 and p == 1 for r, p in pares),
+        "FN": sum(r == 1 and p == 0 for r, p in pares),
+        "VN": sum(r == 0 and p == 0 for r, p in pares),
+    }
+
+
+def dividir(numerador: int, denominador: int) -> float | None:
+    return numerador / denominador if denominador else None
+
+
+def calcular_metricas(matriz: dict[str, int]) -> dict[str, float | None]:
+    vp, fp, fn, vn = matriz["VP"], matriz["FP"], matriz["FN"], matriz["VN"]
+    precisao = dividir(vp, vp + fp)
+    revocacao = dividir(vp, vp + fn)
+    if precisao is None or revocacao is None or precisao + revocacao == 0:
+        f1 = None
+    else:
+        f1 = 2 * precisao * revocacao / (precisao + revocacao)
+    return {
+        "Acurácia": dividir(vp + vn, vp + fp + fn + vn),
+        "Precisão": precisao,
+        "Revocação": revocacao,
+        "Especificidade": dividir(vn, vn + fp),
+        "F1": f1,
+    }
+
+
+def formatar(valor: float | None) -> str:
+    return "n/d" if valor is None else f"{valor:.3f}"
+
+
+def tabela(cabecalho: list[str], linhas: list[list], titulo: str) -> str:
+    """Monta uma tabela em texto com colunas alinhadas."""
+    textos = [[str(c) for c in cabecalho]] + [[str(c) for c in l] for l in linhas]
+    larguras = [max(len(l[i]) for l in textos) for i in range(len(cabecalho))]
+
+    def linha_texto(celulas: list[str]) -> str:
+        return "| " + " | ".join(c.ljust(w) for c, w in zip(celulas, larguras)) + " |"
+
+    separador = "|-" + "-|-".join("-" * w for w in larguras) + "-|"
+    corpo = [linha_texto(textos[0]), separador] + [linha_texto(l) for l in textos[1:]]
+    return f"\n{titulo}\n" + "\n".join(corpo) + "\n"
+
+
+def melhor_limiar(valores: list[float], referencias: list[int]) -> tuple[float, int]:
+    """Testa limiares no meio de valores vizinhos e devolve o de maior acurácia."""
+    unicos = sorted(set(valores))
+    candidatos = [unicos[0]] + [
+        (a + b) / 2 for a, b in zip(unicos, unicos[1:])
+    ] + [unicos[-1] + 1]
+
+    melhor = (candidatos[0], -1)
+    for limiar in candidatos:
+        acertos = sum(int(v >= limiar) == r for v, r in zip(valores, referencias))
+        if acertos > melhor[1]:
+            melhor = (limiar, acertos)
+    return melhor
+
+
 def resumir_resultados(pasta_saida: Path) -> str:
-    """Resumo rápido do CSV: total de vagas e, se houver, acertos do limiar."""
+    """Lê o CSV do pipeline e monta as tabelas de métricas (também salva em metricas.txt)."""
     caminho_csv = pasta_saida / "caracteristicas.csv"
     if not caminho_csv.is_file():
         return ""
@@ -117,22 +186,107 @@ def resumir_resultados(pasta_saida: Path) -> str:
     with caminho_csv.open("r", encoding="utf-8") as arquivo:
         linhas = list(csv.DictReader(arquivo))
 
-    resumo = f"Vagas analisadas: {len(linhas)}\n"
+    configuracao = {}
+    caminho_json = pasta_saida / "parametros.json"
+    if caminho_json.is_file():
+        with caminho_json.open("r", encoding="utf-8") as arquivo:
+            configuracao = json.load(arquivo)
 
-    comparaveis = [
-        linha for linha in linhas
-        if linha.get("ocupada_prevista", "") != ""
-        and linha.get("ocupada_referencia", "") != ""
-    ]
+    resumo = f"\nVagas analisadas: {len(linhas)}\n"
+
+    rotuladas = [l for l in linhas if l.get("ocupada_referencia", "") != ""]
+    if not rotuladas:
+        resumo += "Sem rótulos de referência: métricas não calculadas.\n"
+        return resumo
+
+    referencias = [int(l["ocupada_referencia"]) for l in rotuladas]
+    resumo += (
+        f"Rotuladas: {len(rotuladas)} "
+        f"(ocupadas: {sum(referencias)} | livres: {len(referencias) - sum(referencias)})\n"
+    )
+
+    # ---- classificação com o limiar escolhido na tela ----
+    comparaveis = [l for l in rotuladas if l.get("ocupada_prevista", "") != ""]
     if comparaveis:
-        acertos = sum(
-            linha["ocupada_prevista"] == linha["ocupada_referencia"]
-            for linha in comparaveis
-        )
+        refs = [int(l["ocupada_referencia"]) for l in comparaveis]
+        prevs = [int(l["ocupada_prevista"]) for l in comparaveis]
+        matriz = contar_matriz(refs, prevs)
+
         resumo += (
-            f"Acertos em relação aos rótulos: {acertos}/{len(comparaveis)} "
-            f"({acertos / len(comparaveis):.0%}) - avaliação preliminar\n"
+            f"\nClassificação: {configuracao.get('atributo', '?')} >= "
+            f"{configuracao.get('limiar', '?')}  ->  ocupada\n"
         )
+
+        resumo += tabela(
+            ["", "Prevista ocupada", "Prevista livre"],
+            [
+                ["Real ocupada", f"VP = {matriz['VP']}", f"FN = {matriz['FN']}"],
+                ["Real livre", f"FP = {matriz['FP']}", f"VN = {matriz['VN']}"],
+            ],
+            "Tabela 1 - Matriz de confusão",
+        )
+
+        resumo += tabela(
+            ["Métrica", "Valor"],
+            [[nome, formatar(valor)] for nome, valor in calcular_metricas(matriz).items()],
+            "Tabela 2 - Métricas (classe positiva = ocupada)",
+        )
+
+        por_imagem = {}
+        for linha, r, p in zip(comparaveis, refs, prevs):
+            acertos, total = por_imagem.get(linha["imagem"], (0, 0))
+            por_imagem[linha["imagem"]] = (acertos + (r == p), total + 1)
+        resumo += tabela(
+            ["Imagem", "Acertos", "Acurácia"],
+            [[img, f"{a}/{t}", f"{a / t:.0%}"] for img, (a, t) in sorted(por_imagem.items())],
+            "Tabela 3 - Acertos por imagem",
+        )
+
+        erros = [
+            [l["imagem"], l["vaga_id"],
+             "FP (livre -> ocupada)" if p == 1 else "FN (ocupada -> livre)",
+             l.get(configuracao.get("atributo", ""), "")]
+            for l, r, p in zip(comparaveis, refs, prevs) if r != p
+        ]
+        if erros:
+            resumo += tabela(
+                ["Imagem", "Vaga", "Tipo de erro", "Valor do atributo"],
+                erros,
+                "Tabela 4 - Erros de classificação",
+            )
+        else:
+            resumo += "\nTabela 4 - Erros de classificação: nenhum erro.\n"
+    else:
+        resumo += "\nLimiar vazio: Tabelas 1 a 4 não geradas (informe um limiar).\n"
+
+    # ---- comparação entre atributos ----
+    comparacao = []
+    for atributo in ATRIBUTOS:
+        if atributo not in rotuladas[0]:
+            continue
+        valores = [float(l[atributo]) for l in rotuladas]
+        limiar, _ = melhor_limiar(valores, referencias)
+        prevs = [int(v >= limiar) for v in valores]
+        metricas = calcular_metricas(contar_matriz(referencias, prevs))
+        comparacao.append(
+            [atributo, f"{limiar:.4f}"] + [formatar(v) for v in metricas.values()]
+        )
+    resumo += tabela(
+        ["Atributo", "Melhor limiar", "Acurácia", "Precisão", "Revocação",
+         "Especif.", "F1"],
+        comparacao,
+        "Tabela 5 - Comparação entre atributos (limiar de maior acurácia)",
+    )
+    resumo += (
+        "Obs.: na Tabela 5 o limiar foi ajustado nas mesmas imagens avaliadas,\n"
+        "então os valores são otimistas (sem divisão calibração/avaliação).\n"
+    )
+
+    try:
+        (pasta_saida / "metricas.txt").write_text(resumo, encoding="utf-8")
+        resumo += f"\nTabelas salvas em: {pasta_saida / 'metricas.txt'}\n"
+    except OSError as erro:
+        resumo += f"\nNão foi possível salvar metricas.txt: {erro}\n"
 
     return resumo
 
