@@ -19,9 +19,13 @@ ATRIBUTOS = [
 
 PADROES = {
     "input": "images/input",
+    "imagem_referencia": "images/input/3.png",
     "annotations": "annotations/vagas.json",
     "labels": "annotations/rotulos.csv",
+    "recortes": "images/output",
     "output": "data/results",
+    "experimentos": "data/experimentos",
+    "quantidade_vagas": 6,
     "blur": 5,
     "canny_min": 50,
     "canny_max": 150,
@@ -46,10 +50,6 @@ def montar_ambiente() -> dict[str, str]:
     return ambiente
 
 
-def comando_testes() -> list[str]:
-    return [sys.executable, "-m", "pytest", "-v", "tests"]
-
-
 def converter_limiar(texto: str) -> float | None:
     """Aceita '0.06' ou '0,06'. Texto vazio = sem classificação."""
     texto = texto.strip().replace(",", ".")
@@ -58,28 +58,102 @@ def converter_limiar(texto: str) -> float | None:
     return float(texto)
 
 
-def comando_pipeline(opcoes: dict) -> list[str]:
-    """Monta o comando do pipeline a partir das opções da tela."""
-    comando = [
-        sys.executable, "-m", "estacionamento.pipeline",
-        "--input", opcoes["input"],
-        "--annotations", opcoes["annotations"],
-        "--output", opcoes["output"],
+# ---------------------------------------------------------------------------
+# Comandos (um para cada script do projeto)
+# ---------------------------------------------------------------------------
+
+def comando_modulo(modulo: str, *argumentos: str) -> list[str]:
+    return [sys.executable, "-m", modulo, *argumentos]
+
+
+def argumentos_parametros(opcoes: dict) -> list[str]:
+    """Parâmetros de processamento, compartilhados pelo pipeline e pelos experimentos."""
+    argumentos = [
         "--blur", str(int(opcoes["blur"])),
         "--canny-min", str(int(opcoes["canny_min"])),
         "--canny-max", str(int(opcoes["canny_max"])),
         "--kernel-fechamento", str(int(opcoes["kernel_fechamento"])),
         "--kernel-abertura", str(int(opcoes["kernel_abertura"])),
         "--area-minima", str(int(opcoes["area_minima"])),
-        "--atributo", opcoes["atributo"],
     ]
+    if opcoes["clahe"]:
+        argumentos.append("--clahe")
+    if opcoes["sem_morfologia"]:
+        argumentos.append("--sem-morfologia")
+    return argumentos
+
+
+def comando_verificar_imagem(opcoes: dict) -> list[str]:
+    """__main__.py: leitura e validação da imagem de referência."""
+    return comando_modulo("estacionamento", "--input", opcoes["imagem_referencia"])
+
+
+def comando_delimitar(opcoes: dict) -> list[str]:
+    """anotar_vagas.py: delimitação manual das vagas (abre janela do OpenCV)."""
+    return comando_modulo(
+        "estacionamento.anotar_vagas",
+        "--input", opcoes["imagem_referencia"],
+        "--annotations", opcoes["annotations"],
+        "--output", opcoes["recortes"],
+        "--quantidade", str(int(opcoes["quantidade_vagas"])),
+    )
+
+
+def comando_recortes(opcoes: dict) -> list[str]:
+    """processar_vagas.py: imagens delimitadas e recortes de todas as imagens."""
+    return comando_modulo(
+        "estacionamento.processar_vagas",
+        "--input", opcoes["input"],
+        "--annotations", opcoes["annotations"],
+        "--output", opcoes["recortes"],
+    )
+
+
+def comando_rotular(opcoes: dict) -> list[str]:
+    """rotular_vagas.py: rotulagem manual (abre janela do OpenCV, teclas 0 e 1)."""
+    return comando_modulo(
+        "estacionamento.rotular_vagas",
+        "--input", opcoes["input"],
+        "--annotations", opcoes["annotations"],
+        "--output", opcoes["labels"],
+    )
+
+
+def comando_testes() -> list[str]:
+    return comando_modulo("pytest", "-v", "tests")
+
+
+def comando_pipeline(opcoes: dict) -> list[str]:
+    """pipeline.py: extração de características e classificação."""
+    comando = comando_modulo(
+        "estacionamento.pipeline",
+        "--input", opcoes["input"],
+        "--annotations", opcoes["annotations"],
+        "--output", opcoes["output"],
+        "--atributo", opcoes["atributo"],
+        *argumentos_parametros(opcoes),
+    )
 
     if opcoes["labels"].strip():
         comando += ["--labels", opcoes["labels"]]
-    if opcoes["clahe"]:
-        comando.append("--clahe")
-    if opcoes["sem_morfologia"]:
-        comando.append("--sem-morfologia")
+
+    limiar = converter_limiar(opcoes["limiar"])
+    if limiar is not None:
+        comando += ["--limiar", str(limiar)]
+
+    return comando
+
+
+def comando_experimentos(opcoes: dict) -> list[str]:
+    """experimentos.py: comparação de parâmetros a partir da configuração da tela."""
+    comando = comando_modulo(
+        "estacionamento.experimentos",
+        "--input", opcoes["input"],
+        "--annotations", opcoes["annotations"],
+        "--labels", opcoes["labels"],
+        "--output", opcoes["experimentos"],
+        *argumentos_parametros(opcoes),
+    )
 
     limiar = converter_limiar(opcoes["limiar"])
     if limiar is not None:
@@ -280,6 +354,7 @@ def resumir_resultados(pasta_saida: Path) -> str:
     resumo += (
         "Obs.: na Tabela 5 o limiar foi ajustado nas mesmas imagens avaliadas,\n"
         "então os valores são otimistas (sem divisão calibração/avaliação).\n"
+        "Para a validação por imagem (LOIO), use o botão 'Rodar experimentos'.\n"
     )
 
     try:
@@ -289,6 +364,18 @@ def resumir_resultados(pasta_saida: Path) -> str:
         resumo += f"\nNão foi possível salvar metricas.txt: {erro}\n"
 
     return resumo
+
+
+def resumir_experimentos(pasta_experimentos: Path) -> str:
+    """Mostra no log as tabelas geradas pelo experimentos.py."""
+    caminho = pasta_experimentos / "resultados_experimentos.md"
+    if not caminho.is_file():
+        return ""
+    texto = caminho.read_text(encoding="utf-8")
+    return (
+        "\n" + texto
+        + f"\nGráficos e tabelas em: {pasta_experimentos}\n"
+    )
 
 
 def abrir_pasta(caminho: Path) -> None:
@@ -312,8 +399,8 @@ def iniciar_interface() -> None:
 
     janela = tk.Tk()
     janela.title("Detecção de Vagas - M2")
-    janela.geometry("860x680")
-    janela.minsize(720, 560)
+    janela.geometry("920x800")
+    janela.minsize(760, 640)
 
     mensagens: queue.Queue[str] = queue.Queue()
     botoes: list[ttk.Button] = []
@@ -321,9 +408,13 @@ def iniciar_interface() -> None:
     # ---- variáveis ligadas aos campos ----
     variaveis = {
         "input": tk.StringVar(value=PADROES["input"]),
+        "imagem_referencia": tk.StringVar(value=PADROES["imagem_referencia"]),
         "annotations": tk.StringVar(value=PADROES["annotations"]),
         "labels": tk.StringVar(value=PADROES["labels"]),
+        "recortes": tk.StringVar(value=PADROES["recortes"]),
         "output": tk.StringVar(value=PADROES["output"]),
+        "experimentos": tk.StringVar(value=PADROES["experimentos"]),
+        "quantidade_vagas": tk.IntVar(value=PADROES["quantidade_vagas"]),
         "blur": tk.IntVar(value=PADROES["blur"]),
         "canny_min": tk.IntVar(value=PADROES["canny_min"]),
         "canny_max": tk.IntVar(value=PADROES["canny_max"]),
@@ -356,9 +447,12 @@ def iniciar_interface() -> None:
 
     campos_arquivo = [
         ("Pasta de imagens", "input", "pasta"),
+        ("Imagem de referência", "imagem_referencia", "arquivo"),
         ("Vagas (JSON)", "annotations", "arquivo"),
-        ("Rótulos (CSV, opcional)", "labels", "arquivo"),
+        ("Rótulos (CSV)", "labels", "arquivo"),
+        ("Pasta de recortes", "recortes", "pasta"),
         ("Pasta de resultados", "output", "pasta"),
+        ("Pasta de experimentos", "experimentos", "pasta"),
     ]
     for linha, (rotulo, chave, tipo) in enumerate(campos_arquivo):
         ttk.Label(quadro_arquivos, text=rotulo).grid(row=linha, column=0, sticky="w", pady=2)
@@ -398,6 +492,13 @@ def iniciar_interface() -> None:
     ttk.Checkbutton(
         quadro_parametros, text="Desligar morfologia", variable=variaveis["sem_morfologia"]
     ).grid(row=2, column=2, columnspan=2, sticky="w", pady=(6, 2))
+    ttk.Label(quadro_parametros, text="Qtd. de vagas").grid(
+        row=2, column=4, sticky="w", padx=(0, 4), pady=(6, 2)
+    )
+    ttk.Spinbox(
+        quadro_parametros, from_=1, to=200, increment=1,
+        textvariable=variaveis["quantidade_vagas"], width=6
+    ).grid(row=2, column=5, sticky="w", pady=(6, 2))
 
     ttk.Label(quadro_parametros, text="Atributo").grid(row=3, column=0, sticky="w", pady=2)
     ttk.Combobox(
@@ -412,12 +513,20 @@ def iniciar_interface() -> None:
     )
 
     # ---- botões ----
-    quadro_botoes = ttk.Frame(janela, padding=(10, 5))
-    quadro_botoes.pack(fill="x")
+    quadro_preparacao = ttk.LabelFrame(
+        janela, text="1. Preparação das vagas (feita uma vez)", padding=(8, 6)
+    )
+    quadro_preparacao.pack(fill="x", padx=10, pady=(5, 0))
+
+    quadro_execucao = ttk.LabelFrame(janela, text="2. Execução e avaliação", padding=(8, 6))
+    quadro_execucao.pack(fill="x", padx=10, pady=5)
+
+    quadro_utilidades = ttk.Frame(janela, padding=(10, 0))
+    quadro_utilidades.pack(fill="x")
 
     # ---- log ----
-    log = ScrolledText(janela, height=18, font=("Consolas", 10), state="disabled")
-    log.pack(fill="both", expand=True, padx=10, pady=(0, 10))
+    log = ScrolledText(janela, height=16, font=("Consolas", 10), state="disabled")
+    log.pack(fill="both", expand=True, padx=10, pady=(5, 10))
 
     def escrever(texto: str) -> None:
         log.configure(state="normal")
@@ -460,74 +569,148 @@ def iniciar_interface() -> None:
             return None
         return opcoes
 
-    def rodar_testes() -> None:
-        def tarefa() -> None:
-            mensagens.put("\n=== Testes ===\n")
-            codigo = executar(comando_testes(), mensagens.put)
-            if codigo == 0:
-                mensagens.put("Todos os testes passaram.\n")
-            else:
-                mensagens.put(
-                    "Algum teste falhou (veja acima). Se apareceu "
-                    "'No module named pytest', rode: py -m pip install pytest\n"
-                )
-        em_segundo_plano(tarefa)
+    def confirmar_sobrescrever(chave: str, descricao: str, opcoes: dict) -> bool:
+        caminho = RAIZ / opcoes[chave]
+        if not caminho.exists():
+            return True
+        return messagebox.askyesno(
+            "Sobrescrever arquivo?",
+            f"{descricao} já existe:\n{opcoes[chave]}\n\n"
+            "Ele será substituído pelo novo resultado. Continuar?",
+        )
 
-    def rodar_pipeline() -> None:
-        opcoes = ler_opcoes()
-        if opcoes is None:
-            return
+    # ---- etapas (cada uma devolve True se deu certo) ----
+    def etapa(titulo: str, comando: list[str], sucesso: str = "", erro: str = "") -> bool:
+        mensagens.put(f"\n=== {titulo} ===\n")
+        codigo = executar(comando, mensagens.put)
+        if codigo == 0:
+            if sucesso:
+                mensagens.put(sucesso)
+            return True
+        mensagens.put(erro or f"{titulo}: terminou com erro (veja acima).\n")
+        return False
 
-        def tarefa() -> None:
-            mensagens.put("\n=== Pipeline (todas as imagens da pasta) ===\n")
-            codigo = executar(comando_pipeline(opcoes), mensagens.put)
-            if codigo == 0:
-                mensagens.put(resumir_resultados(RAIZ / opcoes["output"]))
-            else:
-                mensagens.put("O pipeline terminou com erro (veja acima).\n")
-        em_segundo_plano(tarefa)
+    def etapa_testes() -> bool:
+        return etapa(
+            "Testes", comando_testes(), "Todos os testes passaram.\n",
+            "Algum teste falhou (veja acima). Se apareceu "
+            "'No module named pytest', rode: py -m pip install pytest\n",
+        )
 
-    def rodar_tudo() -> None:
-        opcoes = ler_opcoes()
-        if opcoes is None:
-            return
+    def etapa_recortes(opcoes: dict) -> bool:
+        return etapa("Imagens delimitadas e recortes", comando_recortes(opcoes))
 
-        def tarefa() -> None:
-            mensagens.put("\n=== Testes ===\n")
-            if executar(comando_testes(), mensagens.put) != 0:
-                mensagens.put("Testes falharam; o pipeline não foi executado.\n")
+    def etapa_pipeline(opcoes: dict) -> bool:
+        if etapa("Pipeline (todas as imagens da pasta)", comando_pipeline(opcoes)):
+            mensagens.put(resumir_resultados(RAIZ / opcoes["output"]))
+            return True
+        return False
+
+    def etapa_experimentos(opcoes: dict) -> bool:
+        if not opcoes["labels"].strip():
+            mensagens.put("\nExperimentos precisam do arquivo de rótulos (CSV).\n")
+            return False
+        if etapa(
+            "Experimentos (comparação de parâmetros)", comando_experimentos(opcoes),
+            erro="Os experimentos terminaram com erro (veja acima). Se apareceu "
+                 "'No module named matplotlib', rode: py -m pip install matplotlib\n",
+        ):
+            mensagens.put(resumir_experimentos(RAIZ / opcoes["experimentos"]))
+            return True
+        return False
+
+    # ---- ações dos botões ----
+    def acao(funcao, precisa_opcoes: bool = True, confirmar: tuple[str, str] | None = None):
+        def executar_acao() -> None:
+            opcoes = ler_opcoes() if precisa_opcoes else {}
+            if opcoes is None:
                 return
-            mensagens.put("\n=== Pipeline (todas as imagens da pasta) ===\n")
-            if executar(comando_pipeline(opcoes), mensagens.put) == 0:
-                mensagens.put(resumir_resultados(RAIZ / opcoes["output"]))
-        em_segundo_plano(tarefa)
+            if confirmar and not confirmar_sobrescrever(*confirmar, opcoes):
+                return
+            em_segundo_plano(lambda: funcao(opcoes))
+        return executar_acao
 
-    def abrir_resultados() -> None:
-        try:
-            abrir_pasta(RAIZ / variaveis["output"].get())
-        except Exception as erro:
-            messagebox.showerror("Erro", str(erro))
+    def verificar_imagem(opcoes: dict) -> None:
+        etapa("Leitura da imagem de referência", comando_verificar_imagem(opcoes))
+
+    def delimitar(opcoes: dict) -> None:
+        mensagens.put(
+            "\nNa janela do OpenCV: desenhe cada vaga com o mouse e "
+            "confirme com ENTER ou ESPAÇO.\n"
+        )
+        etapa("Delimitação manual das vagas", comando_delimitar(opcoes))
+
+    def rotular(opcoes: dict) -> None:
+        mensagens.put(
+            "\nNa janela do OpenCV: pressione 0 para LIVRE ou 1 para OCUPADA "
+            "(a janela precisa estar selecionada).\n"
+        )
+        etapa("Rotulagem manual", comando_rotular(opcoes))
+
+    def testes_e_pipeline(opcoes: dict) -> None:
+        if not etapa_testes():
+            mensagens.put("Testes falharam; o pipeline não foi executado.\n")
+            return
+        etapa_pipeline(opcoes)
+
+    def executar_tudo(opcoes: dict) -> None:
+        """Etapas automáticas em sequência (delimitação e rotulagem são manuais)."""
+        if not etapa_testes():
+            mensagens.put("Testes falharam; as demais etapas não foram executadas.\n")
+            return
+        if not etapa_recortes(opcoes):
+            return
+        if not etapa_pipeline(opcoes):
+            return
+        if etapa_experimentos(opcoes):
+            mensagens.put("\n=== Tudo concluído ===\n")
+
+    def abrir(chave: str):
+        def abrir_acao() -> None:
+            try:
+                abrir_pasta(RAIZ / variaveis[chave].get())
+            except Exception as erro:
+                messagebox.showerror("Erro", str(erro))
+        return abrir_acao
 
     def limpar_log() -> None:
         log.configure(state="normal")
         log.delete("1.0", "end")
         log.configure(state="disabled")
 
-    for texto, acao in [
-        ("Rodar testes", rodar_testes),
-        ("Processar todas as imagens", rodar_pipeline),
-        ("Testes + processar", rodar_tudo),
-    ]:
-        botao = ttk.Button(quadro_botoes, text=texto, command=acao)
-        botao.pack(side="left", padx=(0, 6))
-        botoes.append(botao)
+    botoes_preparacao = [
+        ("Verificar imagem", acao(verificar_imagem)),
+        ("Delimitar vagas", acao(delimitar, confirmar=("annotations", "O arquivo de vagas"))),
+        ("Gerar recortes", acao(etapa_recortes)),
+        ("Rotular vagas", acao(rotular, confirmar=("labels", "O arquivo de rótulos"))),
+    ]
+    botoes_execucao = [
+        ("Rodar testes", acao(lambda _: etapa_testes(), precisa_opcoes=False)),
+        ("Processar todas as imagens", acao(etapa_pipeline)),
+        ("Testes + processar", acao(testes_e_pipeline)),
+        ("Rodar experimentos", acao(etapa_experimentos)),
+        ("Executar tudo", acao(executar_tudo)),
+    ]
+    for quadro, lista in ((quadro_preparacao, botoes_preparacao),
+                          (quadro_execucao, botoes_execucao)):
+        for texto, comando in lista:
+            botao = ttk.Button(quadro, text=texto, command=comando)
+            botao.pack(side="left", padx=(0, 6))
+            botoes.append(botao)
 
-    ttk.Button(quadro_botoes, text="Limpar log", command=limpar_log).pack(side="right")
-    ttk.Button(quadro_botoes, text="Abrir resultados", command=abrir_resultados).pack(
-        side="right", padx=6
+    ttk.Button(quadro_utilidades, text="Limpar log", command=limpar_log).pack(side="right")
+    for texto, chave in (("Abrir experimentos", "experimentos"),
+                         ("Abrir resultados", "output"),
+                         ("Abrir recortes", "recortes")):
+        ttk.Button(quadro_utilidades, text=texto, command=abrir(chave)).pack(
+            side="right", padx=(0, 6)
+        )
+
+    escrever(
+        f"Projeto: {RAIZ}\nPython: {sys.executable}\n"
+        "'Executar tudo' = testes -> recortes -> pipeline -> experimentos.\n"
+        "Delimitar e rotular são manuais e ficam fora do 'Executar tudo'.\n"
     )
-
-    escrever(f"Projeto: {RAIZ}\nPython: {sys.executable}\n")
     atualizar_log()
     janela.mainloop()
 
