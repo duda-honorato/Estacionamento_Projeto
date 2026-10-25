@@ -52,7 +52,7 @@ def configurar_argumentos() -> argparse.Namespace:
                             default=padrao.area_minima_componente)
 
     analisador.add_argument("--atributo", choices=ATRIBUTOS,
-                            default="area_mascara",
+                            default="densidade_bordas",
                             help="Atributo usado na classificação por limiar.")
     analisador.add_argument("--limiar", type=float,
                             help="Se informado, vaga com atributo >= limiar é OCUPADA (1).")
