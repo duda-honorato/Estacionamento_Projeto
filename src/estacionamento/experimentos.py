@@ -6,22 +6,17 @@ from pathlib import Path
 import matplotlib
 
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt  # noqa: E402
+import matplotlib.pyplot as plt  
 
-from .delimitador_vagas import carregar_anotacoes, extrair_regioes_interesse  # noqa: E402
-from .leitor_imagens import carregar_imagem  # noqa: E402
-from .pipeline import ATRIBUTOS, EXTENSOES, carregar_rotulos  # noqa: E402
-from .processamento import Parametros, processar_vaga  # noqa: E402
+from .delimitador_vagas import carregar_anotacoes, extrair_regioes_interesse
+from .leitor_imagens import carregar_imagem  
+from .pipeline import ATRIBUTOS, EXTENSOES, carregar_rotulos  
+from .processamento import Parametros, processar_vaga  
 
 COR_LIVRE = "#2a78d6"
 COR_OCUPADA = "#eb6834"
 COR_TEXTO = "#3d3d3a"
 COR_GRADE = "#e4e3dd"
-
-
-# ---------------------------------------------------------------------------
-# Dados
-# ---------------------------------------------------------------------------
 
 def carregar_amostras(pasta: Path, anotacoes: Path, rotulos_csv: Path) -> list[dict]:
     """Recorta as ROIs de todas as imagens e junta com os rótulos."""
@@ -58,11 +53,6 @@ def extrair(amostras: list[dict], parametros: Parametros) -> list[dict]:
         linhas.append(linha)
     return linhas
 
-
-# ---------------------------------------------------------------------------
-# Limiar e métricas (mesma regra da interface: valor >= limiar -> ocupada)
-# ---------------------------------------------------------------------------
-
 def melhor_limiar(valores: list[float], referencias: list[int]) -> float:
     unicos = sorted(set(valores))
     candidatos = [unicos[0]] + [
@@ -97,7 +87,6 @@ def metricas(referencias: list[int], previstas: list[int]) -> dict[str, float]:
 
 
 def avaliar(linhas: list[dict], atributo: str) -> dict[str, float]:
-    """Métricas com limiar ajustado em tudo e com validação LOIO."""
     valores = [l[atributo] for l in linhas]
     referencias = [l["ocupada"] for l in linhas]
 
@@ -130,10 +119,6 @@ def avaliar(linhas: list[dict], atributo: str) -> dict[str, float]:
         "media_ocupadas": sum(ocupadas) / len(ocupadas),
     }
 
-
-# ---------------------------------------------------------------------------
-# Experimentos
-# ---------------------------------------------------------------------------
 
 def exp_atributos(amostras, base):
     """E1 - Comparação entre atributos com os parâmetros padrão."""
@@ -201,11 +186,6 @@ def exp_area_minima(amostras, base):
                               **avaliar(linhas, atributo)})
     return resultado
 
-
-# ---------------------------------------------------------------------------
-# Gráficos
-# ---------------------------------------------------------------------------
-
 def estilizar(eixo) -> None:
     eixo.spines[["top", "right"]].set_visible(False)
     for lado in ("left", "bottom"):
@@ -251,7 +231,7 @@ def grafico_dispersao(linhas: list[dict], limiar: float, caminho: Path) -> None:
     eixo.set_xlabel("Desvio-padrão dos níveis de cinza", color=COR_TEXTO)
     eixo.set_ylabel("Densidade de bordas (fração de pixels)", color=COR_TEXTO)
     eixo.set_title(
-        "Separação entre vagas livres e ocupadas (30 amostras, parâmetros padrão)",
+        f"Separação entre vagas livres e ocupadas ({len(linhas)} amostras, configuração base)",
         fontsize=11, color=COR_TEXTO, loc="left",
     )
     eixo.legend(frameon=False, fontsize=9, loc="upper left")
@@ -285,10 +265,6 @@ def grafico_atributos(linhas: list[dict], tabela: list[dict], caminho: Path) -> 
     figura.savefig(caminho)
     plt.close(figura)
 
-
-# ---------------------------------------------------------------------------
-# Saída
-# ---------------------------------------------------------------------------
 
 def formatar(valor) -> str:
     if isinstance(valor, float):
@@ -367,7 +343,7 @@ def main() -> None:
 
     linhas_base, e1 = exp_atributos(amostras, base)
     experimentos = [
-        ("exp1_atributos", "E1 - Comparação entre atributos (parâmetros padrão)", e1),
+        ("exp1_atributos", "E1 - Comparação entre atributos (configuração base)", e1),
         ("exp2_canny_blur", "E2 - Canny e blur (atributo: densidade_bordas)",
          exp_canny_blur(amostras, base)),
         ("exp3_clahe", "E3 - CLAHE", exp_clahe(amostras, base)),
