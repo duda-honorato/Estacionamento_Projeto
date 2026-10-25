@@ -69,13 +69,12 @@ Desenvolver e avaliar uma solução em Python e OpenCV para classificar vagas de
 |---|---|
 | Fonte | Dataset PKLot — https://web.inf.ufpr.br/luizoliveira/research-interests/pklot/ |
 | Câmera | Uma única câmera fixa, com vista elevada do estacionamento |
-| Subconjunto do PKLot | _[preencher: estacionamento/câmera de origem, ex.: UFPR04, UFPR05 ou PUCPR]_ |
+| Subconjunto do PKLot | PUCPR] |
 | Quantidade | 5 imagens (`images/input/0.png` a `4.png`) |
 | Resolução | 1280 × 720 pixels, 3 canais (BGR) |
 | Condições | Diferentes iluminações (incluindo sombra forte) e diferentes níveis de ocupação |
 | Imagem de referência | `3.png` (estacionamento vazio), usada na delimitação das vagas |
-| Critério de seleção | _[preencher: por que essas 5 imagens foram escolhidas]_ |
-| Nomes originais | _[preencher: correspondência entre `0.png`–`4.png` e os arquivos originais do PKLot]_ |
+| Critério de seleção | Imagens que acreditamos que seja da mesma câmera, pelas imagens, para que as coordenadas das vagas valham para todas, com variação de iluminação (com e sem sombra) e de ocupação (fileira vazia e com 1 a 3 vagas ocupadas), incluindo uma imagem vazia para servir de referência |
 | Vagas analisadas | 6 vagas de uma mesma fileira (`vaga_01` a `vaga_06`) |
 | Amostras | 30 (5 imagens × 6 vagas) |
 | Rótulos | Manuais (`annotations/rotulos.csv`): 7 ocupadas e 23 livres |
