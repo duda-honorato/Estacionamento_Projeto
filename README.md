@@ -339,7 +339,7 @@ Para a etapa final (**M3**), o grupo planejou as seguintes ações concretas:
 - **Vídeo da Etapa M1 (Apresentação da Proposta):**  
   [https://youtu.be/5l5vSYWoiJw](https://youtu.be/5l5vSYWoiJw)
 - **Vídeo da Etapa M2 (Demonstração da Implementação e Resultados):**  
-  `[[https://youtu.be/TRQJADAPK8c](https://youtu.be/Jp9i_GVVrVQ)]`  
+  [https://youtu.be/TRQJADAPK8c](https://youtu.be/Jp9i_GVVrVQ)
   *Roteiro da apresentação: Evolução desde a M1, demonstração da interface gráfica, execução dos 46 testes com pytest, inspeção dos recortes e saídas intermediárias, análise dos gráficos de experimentos e discussão do plano para M3.*
 
 ---
