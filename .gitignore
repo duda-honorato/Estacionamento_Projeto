@@ -1,5 +1,21 @@
+# Ambientes virtuais
 .venv/
+venv/
+env/
+
+# Caches e temporários do Python
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+*.so
 .pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+
+# Configurações locais de IDEs
 .vscode/
+.idea/
+*.swp
+*~
+.DS_Store
