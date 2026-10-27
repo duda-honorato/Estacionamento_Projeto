@@ -1,266 +1,363 @@
 # Detecção de Vagas Disponíveis em Estacionamentos por Processamento Digital de Imagens
 
-## Integrantes
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![OpenCV](https://img.shields.io/badge/OpenCV-5.x-green.svg)](https://opencv.org/)
+[![pytest](https://img.shields.io/badge/tests-46%20passed-success.svg)](https://pytest.org/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-- João Matheus de Oliveira Vieira
-- Maria Eduarda de Melo Honorato
-- Scheila Carolini da Silva Ceresa
+Projeto Aplicado Longitudinal desenvolvido no curso de Ciência da Computação na disciplina de **Processamento Digital de Imagens (PDI)** — período **2026-02**.
 
-## Descrição do projeto
+---
 
-Este projeto tem como objetivo desenvolver uma solução de Processamento Digital de Imagens (PDI) capaz de identificar vagas de estacionamento livres e ocupadas a partir de imagens capturadas por câmeras.
+## 1. Integrantes da Equipe e Responsabilidades
 
-A proposta utiliza técnicas tradicionais de processamento de imagens para analisar as regiões correspondentes às vagas e determinar seu estado de ocupação.
+| Integrante | Papel Principal | Contribuições na M2 |
+|---|---|---|
+| **João Matheus de Oliveira Vieira** | Engenharia de PDI & Pipeline | Implementação do pipeline de PDI (`processamento.py`, `pipeline.py`, `delimitador_vagas.py`), operações de Canny, morfologia matemática, componentes conexos e suíte de testes com `pytest`. |
+| **Maria Eduarda de Melo Honorato** | Pesquisa Experimental & Avaliação | Concepção do protocolo experimental, rotulagem manual de referência (`annotations/rotulos.csv`), módulo `experimentos.py`, validação cruzada LOIO, análise quantitativa e diagnóstico de erros. |
+| **Scheila Carolini da Silva Ceresa** | Interface, Reprodutibilidade & Docs | Desenvolvimento da interface desktop Tkinter (`interface.py`), documentação técnica (`docs/relatorio_m2.md`, `docs/PROPOSTA.md`, `docs/revisao_m1_plano_m2.md`), gestão de dependências e revisão de qualidade. |
 
-O projeto é desenvolvido de forma incremental ao longo das etapas M1, M2 e M3 da disciplina de Processamento de Imagens.
+---
 
-## Problema investigado
+## 2. Visão Geral e Contexto de Aplicação
 
-Em estacionamentos com grande quantidade de vagas, a identificação visual de espaços disponíveis pode ser ineficiente, especialmente em horários de maior movimentação.
+Em centros urbanos, aeroportos, shopping centers e campi universitários, a busca por vagas de estacionamento gera congestionamentos internos, aumento no consumo de combustível e emissão desnecessária de poluentes.
 
-Diante disso, o projeto investiga a seguinte questão:
+O objetivo deste projeto é desenvolver e validar uma solução em **Python e OpenCV** capaz de determinar em tempo real se vagas individuais de estacionamento estão **livres (0)** ou **ocupadas (1)** a partir de imagens capturadas por câmeras fixas de monitoramento.
 
-**Como utilizar técnicas de Processamento Digital de Imagens para identificar automaticamente vagas de estacionamento livres e ocupadas em imagens capturadas por câmeras?**
+A solução foca em técnicas clássicas e eficientes de Processamento Digital de Imagens:
+- **Pré-processamento:** Escala de cinza e suavização gaussiana (com equalização adaptativa CLAHE opcional).
+- **Segmentação:** Detecção de bordas pelo algoritmo de Canny.
+- **Morfologia Matemática:** Fechamento elíptico (para união de segmentos veiculares) e abertura (eliminação de ruído isolado).
+- **Análise de Componentes Conexos:** Rotulagem 8-conexa com descarte de componentes espúrios de pequena área.
+- **Extração de Descritores:** Comparação sistemática entre 5 atributos de imagem.
+- **Classificação:** Decisão por limiar ótimo calibrado experimentalmente.
 
-## Objetivo geral
+---
 
-Desenvolver e avaliar uma solução em Python e OpenCV para classificar vagas de estacionamento previamente delimitadas como livres ou ocupadas.
+## 3. Evolução Longitudinal do Projeto (M1 → M2)
 
-## Objetivos específicos
+Na **M1**, foi apresentada uma proposta inicial em Java propondo simultaneamente a localização automática das vagas e sua classificação. A devolutiva da M1 destacou a necessidade de focar o escopo, utilizar parâmetros fundamentados nas imagens e demonstrar viabilidade com código e dados reais.
 
-- Selecionar imagens de estacionamentos capturadas por câmeras fixas.
-- Identificar e delimitar as regiões correspondentes às vagas.
-- Extrair as regiões de interesse (ROI) das imagens.
-- Aplicar técnicas de pré-processamento, segmentação e morfologia matemática.
-- Calcular características visuais, como desvio-padrão e densidade de bordas.
-- Implementar a classificação por limiar.
-- Comparar os resultados obtidos com rótulos de referência.
-- Avaliar os métodos por meio de métricas quantitativas e análise de erros.
+A equipe registrou a revisão detalhada em [`docs/revisao_m1_plano_m2.md`](docs/revisao_m1_plano_m2.md) e na proposta [`docs/PROPOSTA.md`](docs/PROPOSTA.md), implementando na **M2**:
 
-## Evolução do escopo
+1. **Linguagem & Ecossistema:** Transição de Java para **Python 3**, integrando OpenCV, NumPy, Matplotlib e Pytest.
+2. **Delimitação Geométrica Estável:** Coordenadas manuais precisas persistidas em formato JSON (`annotations/vagas.json`), isolando a classificação de ocupação contra ruídos externos (como a grama e veículos de outras fileiras).
+3. **Parâmetros Baseados em Dados:** Todos os parâmetros numéricos (filtros, limiares de Canny, raios morfológicos e limiares de decisão) foram obtidos através de experimentos empíricos com o dataset.
+4. **Validação Rigorosa:** Protocolo formal com Matriz de Confusão, Acurácia, Precisão, Revocação, Especificidade, F1-Score e validação cruzada *Leave-One-Image-Out* (LOIO).
+5. **Interface Gráfica e Pipeline:** Executável via interface interativa em Tkinter (`interface.py`) ou por scripts CLI desacoplados.
 
-### M1 — Proposta inicial
+---
 
-Na M1, foi proposta uma solução em Java e OpenCV, dividida em três fases: detecção automática das vagas, extração das regiões de interesse e classificação de ocupação.
+## 4. Conjunto de Imagens e Dados
 
-A etapa foi dedicada à definição do problema, ao planejamento do pipeline e à identificação das tecnologias.
+O projeto utiliza o dataset acadêmico de referência **PKLot**:
+- **Referência:** DE ALMEIDA, P. R. L. et al. *PKLot – A robust dataset for parking lot classification*. Expert Systems with Applications, v. 42, n. 11, p. 4937–4949, 2015.
+- **Subconjunto:** Câmera fixa elevada da **PUCPR** (Curitiba/PR).
+- **Imagens disponíveis:** 5 imagens em alta resolução (1280 × 720 pixels, BGR sem compressão destrutiva):
+  - `3.png`: Estacionamento vazio com luz suave, utilizada como imagem de calibração geométrica de referência.
+  - `0.png`, `1.png`, `2.png`, `4.png`: Variação de iluminação direta, presença de sombras diagonais acentuadas e diferentes níveis de ocupação.
+- **Amostras avaliadas:** 6 vagas de uma mesma fileira (`vaga_01` a `vaga_06`), totalizando **30 amostras** ($5 \text{ imagens} \times 6 \text{ vagas}$).
+- **Ground Truth:** Rótulos manuais em [`annotations/rotulos.csv`](annotations/rotulos.csv), contendo **7 vagas ocupadas** e **23 vagas livres**.
 
-### M2 — Implementação parcial e avaliação
+---
 
-Após a devolutiva da M1, o escopo foi ajustado para reduzir a complexidade inicial e permitir uma avaliação experimental.
+## 5. Pipeline de Processamento Digital de Imagens
 
-As principais mudanças foram:
+O pipeline técnico implementado percorre um fluxo completo e reproduzível:
 
-- Substituição de Java por Python.
-- Utilização da biblioteca OpenCV para Python.
-- Delimitação manual das vagas.
-- Comparação entre atributos baseados em intensidade (desvio-padrão), bordas (Canny), morfologia e componentes conexos.
-- Definição experimental dos limiares de classificação.
-- Avaliação com imagens e rótulos de referência.
-- Interface gráfica para executar os testes e o pipeline e exibir as métricas.
+```mermaid
+flowchart LR
+    A["Imagem PKLot (1280x720)"] --> B["Recorte de ROIs (vagas.json)"]
+    B --> C["Escala de Cinza"]
+    C --> D["Suavização Gaussiana (5x5)"]
+    D --> E["Canny (50, 150)"]
+    E --> F["Morfologia (Fech. 5x5 + Aber. 3x3)"]
+    F --> G["Componentes Conexos (>= 20 px)"]
+    G --> H["Extração de Atributos"]
+    H --> I["Decisão: densidade_bordas >= 0.076"]
+    I --> J["Saída Visual e Tabelas"]
+```
 
-A detecção automática das vagas poderá ser investigada em etapas futuras.
+### Detalhamento das Etapas:
+1. **Recorte da Região de Interesse (ROI):** As coordenadas do JSON fatiam a submatriz da vaga preservando a resolução nativa.
+2. **Conversão para Tons de Cinza:** Conversão ponderada ITU-R BT.601 ($Y = 0.299R + 0.587G + 0.114B$).
+3. **Filtro Gaussiano ($5 \times 5$):** Convolução para atenuação de ruído de alta frequência sem desfocar bordas estruturais.
+4. **Detecção de Bordas Canny:** Gradiente direcional com limiares de histerese $T_{low} = 50$ e $T_{high} = 150$.
+5. **Morfologia Matemática:**
+   - **Fechamento ($5 \times 5$, elíptico):** Conecta bordas de contorno quebradas e vincos do veículo.
+   - **Abertura ($3 \times 3$, elíptico):** Elimina ruídos isolados remanescentes da textura do asfalto.
+6. **Análise de Componentes Conexos:** Rotulagem 8-conexa (`cv2.connectedComponentsWithStats`) descartando componentes com menos de 20 pixels.
+7. **Extração de Características:**
+   - `densidade_bordas`: Proporção de pixels de borda (Canny) sobre a área total da ROI. *(Atributo principal selecionado)*
+   - `area_mascara`: Proporção de pixels ativos após a morfologia.
+   - `desvio_padrao`: Desvio-padrão dos níveis de cinza da ROI.
+   - `maior_componente`: Área do maior componente conexo normalizada pela área da ROI.
+   - `num_componentes`: Quantidade de componentes conexos válidos na ROI.
+8. **Classificação por Limiar:** Se $\text{densidade\_bordas} \ge 0.076$, a vaga é considerada **ocupada (1)**; caso contrário, **livre (0)**.
 
-## Conjunto de imagens
+---
 
-O projeto utiliza imagens de estacionamento capturadas por câmera fixa. A referência adotada é o dataset PKLot:
+## 6. Resultados Experimentais da M2
 
-Fonte: https://web.inf.ufpr.br/luizoliveira/research-interests/pklot/
+### 6.1 Matriz de Confusão (30 Amostras)
 
-O subconjunto atual possui **5 imagens de uma mesma câmera** (`images/input/0.png` a `4.png`), com diferentes condições de iluminação e de ocupação.
+Configuração padrão: `densidade_bordas >= 0.076`, Gaussian Blur $5 \times 5$, Canny 50/150, fechamento $5 \times 5$, abertura $3 \times 3$, área mínima 20 px.
 
-Foram delimitadas **6 vagas** de uma mesma fileira, gerando **30 amostras** (5 imagens × 6 vagas), rotuladas manualmente: **7 ocupadas e 23 livres**.
+| Condição Real \ Classificação Prevista | Prevista Ocupada (1) | Prevista Livre (0) | Total |
+|---|---|---|---|
+| **Real Ocupada (1)** | **VP = 6** | **FN = 1** | 7 |
+| **Real Livre (0)** | **FP = 0** | **VN = 23** | 23 |
+| **Total** | 6 | 24 | **30** |
 
-A licença e as condições de redistribuição dos arquivos devem ser verificadas antes da inclusão de imagens originais no repositório público.
+### 6.2 Indicadores Quantitativos Consolidados
 
-## Pipeline
+| Métrica | Valor Obtido | Descrição |
+|---|---|---|
+| **Acurácia** | **96,7% (0.967)** | 29 acertos em 30 vagas analisadas |
+| **Precisão** | **100,0% (1.000)** | Nenhuma vaga livre foi incorretamente apontada como ocupada |
+| **Revocação (Recall)** | **85,7% (0.857)** | 6 das 7 vagas ocupadas foram detectadas |
+| **Especificidade** | **100,0% (1.000)** | Todas as 23 vagas livres foram identificadas corretamente |
+| **F1-Score** | **92,3% (0.923)** | Média harmônica entre Precisão e Revocação |
+| **Acurácia LOIO** | **93,3% (0.933)** | Validação cruzada *Leave-One-Image-Out* (sem viés de ajuste) |
+| **F1-Score LOIO** | **83,3% (0.833)** | Desempenho em imagem nunca vista na calibração |
 
-### Etapa 1 — Delimitação das vagas
+### 6.3 Desempenho por Imagem
 
-As vagas são marcadas manualmente sobre uma imagem de referência (`3.png`, estacionamento vazio) com `cv2.selectROI`. As coordenadas ficam em `annotations/vagas.json` (`x`, `y`, `largura`, `altura`).
+| Imagem | Acertos | Acurácia Local | Condições Observadas |
+|---|---|---|---|
+| `0.png` | 6 / 6 | 100% | 1 veículo, sombra suave, asfalto limpo |
+| `1.png` | 6 / 6 | 100% | 3 veículos, forte reflexo do sol |
+| `2.png` | 5 / 6 | 83,3% | 3 veículos; veículo escuro na vaga 05 |
+| `3.png` | 6 / 6 | 100% | 100% livre (imagem de calibração) |
+| `4.png` | 6 / 6 | 100% | 100% livre, sombra diagonal pronunciada |
 
-Os retângulos terminam logo acima da faixa de grama (y = 308) para não incluir os veículos da fileira seguinte, que aumentavam artificialmente as bordas e o desvio-padrão das vagas livres. A exceção é a `vaga_03`, que vai até y = 322 e ainda inclui parte da grama e da fileira de baixo.
+### 6.4 Comparação Entre Atributos de PDI
 
-### Etapa 2 — Rotulagem de referência
+| Atributo Avaliado | Limiar Ótimo | Acurácia Aparente | F1-Score | Erros | Acurácia LOIO | F1 LOIO |
+|---|---|---|---|---|---|---|
+| **`densidade_bordas`** | **0.0764** | **96.67%** | **0.9231** | **1** | **93.33%** | **0.8333** |
+| `area_mascara` | 0.1056 | 93.33% | 0.8571 | 2 | 90.00% | 0.7692 |
+| `desvio_padrao` | 43.514 | 90.00% | 0.8000 | 3 | 80.00% | 0.5714 |
+| `maior_componente` | 0.0839 | 90.00% | 0.7273 | 3 | 90.00% | 0.7273 |
+| `num_componentes` | 4.500 | 83.33% | 0.4444 | 5 | 76.67% | 0.2222 |
 
-Cada recorte é exibido ampliado e rotulado pelo teclado (`0` = livre, `1` = ocupada). O resultado é salvo em `annotations/rotulos.csv` (`imagem`, `vaga_id`, `ocupada`).
+> **Gráficos gerados:** As figuras de separabilidade e dispersão estão disponíveis em [`data/experimentos/dispersao_caracteristicas.png`](data/experimentos/dispersao_caracteristicas.png) e [`data/experimentos/separacao_atributos.png`](data/experimentos/separacao_atributos.png).
 
-### Etapa 3 — Extração das regiões de interesse
+### 6.5 Análise de Falhas e Casos Difíceis
+- **O único Falso Negativo (FN — Imagem `2.png`, Vaga `vaga_05`):** Um veículo de lataria escura estacionado sobre piso de asfalto escuro apresentou valor de `densidade_bordas` igual a **0.0226** (abaixo do limiar de 0.076). A baixa reflectância e a ausência de contraste de cor com o pavimento não geraram gradientes suficientes no Canny.
+- **Robustez contra Sombras (Imagem `4.png`, Vaga `vaga_01`):** Embora uma sombra forte corte a vaga vazia, o desvio padrão subiu para 32.01, mas a `densidade_bordas` manteve-se baixa (0.0196), provando que o gradiente de borda do Canny é muito mais robusto à variação de iluminação do que a intensidade pura dos pixels.
 
-Para cada imagem da pasta de entrada, as ROIs das vagas são recortadas a partir das coordenadas do JSON.
+---
 
-### Etapa 4 — Pré-processamento
-
-- Conversão para tons de cinza.
-- CLAHE (equalização adaptativa de histograma), opcional.
-- Suavização gaussiana (kernel padrão 5×5).
-
-### Etapa 5 — Segmentação e morfologia
-
-- Detecção de bordas com Canny (limiares padrão 50 e 150).
-- Fechamento (elemento elíptico 5×5), para unir bordas próximas.
-- Abertura (elemento elíptico 3×3), para remover ruído isolado.
-- Análise de componentes conexos (vizinhança 8), descartando componentes com menos de 20 pixels.
-
-### Etapa 6 — Extração de características
-
-| Atributo | Descrição |
-|---|---|
-| `desvio_padrao` | Desvio-padrão dos níveis de cinza da ROI |
-| `densidade_bordas` | Fração de pixels de borda (Canny) na ROI |
-| `area_mascara` | Fração de pixels ativos após a morfologia |
-| `maior_componente` | Área do maior componente conexo / área da ROI |
-| `num_componentes` | Quantidade de componentes conexos válidos |
-
-### Etapa 7 — Classificação
-
-A vaga é classificada como **ocupada (1)** quando o atributo escolhido é maior ou igual ao limiar; caso contrário, é **livre (0)**.
-
-O atributo padrão é `densidade_bordas`, com limiar **0,076**. Esse valor é o ponto médio entre a maior densidade observada em vagas livres (≈ 0,070) e a menor observada em vagas ocupadas corretamente detectáveis (≈ 0,082).
-
-### Etapa 8 — Avaliação
-
-As previsões são comparadas com os rótulos de referência. A interface calcula a matriz de confusão, a acurácia, a precisão, a revocação, a especificidade e o F1 (classe positiva = ocupada), lista os erros e compara todos os atributos.
-
-## Resultados preliminares (M2)
-
-Configuração: `densidade_bordas >= 0,076`, parâmetros padrão.
-
--- Incluir os testes depois
-
-## Tecnologias
-
-- Python 3
-- OpenCV
-- NumPy
-- Tkinter (interface gráfica)
-- pytest
-- Git e GitHub
-- Visual Studio Code
-
-## Estrutura do projeto
+## 7. Estrutura do Repositório
 
 ```text
 Estacionamento_Projeto/
+├── README.md                      # Síntese e guia técnico completo do projeto
+├── pytest.ini                     # Configuração padronizada para execução dos testes
+├── requirements.txt               # Dependências fixadas do projeto
+├── interface.py                   # Interface gráfica desktop em Tkinter
+├── Diagrama_Arquitetura_M1.md     # Diagrama conceitual da M1
+├── Diagrama_Arquitetura_M2.md     # Diagrama de arquitetura da M2
+├── Diagrama_Pipeline_M1.jpg       # Imagem do pipeline da M1
+├── Diagrama_Pipeline_M2.md        # Diagrama do pipeline da M2
 ├── annotations/
-│   ├── vagas.json            # coordenadas das vagas
-│   └── rotulos.csv           # rótulos de referência (0 = livre, 1 = ocupada)
-├── images/
-│   ├── input/                # imagens do estacionamento
-│   └── output/               # imagens delimitadas e recortes das vagas
+│   ├── vagas.json                 # Coordenadas geométricas das vagas delimitadas
+│   └── rotulos.csv                # Rótulos Ground Truth das 30 amostras
 ├── data/
-│   └── results/              # gerada pelo pipeline
+│   ├── experimentos/              # Tabelas CSV, relatórios e gráficos do experimentos.py
+│   └── results/                   # Imagens classificadas, mosaicos intermediários e métricas
+├── docs/
+│   ├── PROPOSTA.md                # Proposta técnica atualizada
+│   ├── revisao_m1_plano_m2.md     # Auditoria da devolutiva M1 e plano de ação M2
+│   └── relatorio_m2.md            # Relatório técnico completo da etapa M2
+├── images/
+│   ├── input/                     # Imagens originais de entrada do PKLot (0.png a 4.png)
+│   └── output/                    # Recortes individuais e imagem com delimitações
 ├── src/
 │   └── estacionamento/
-│       ├── leitor_imagens.py     # leitura e validação de imagens
-│       ├── delimitador_vagas.py  # seleção, salvamento e recorte das vagas
-│       ├── anotar_vagas.py       # script: delimitação manual
-│       ├── processar_vagas.py    # script: gera imagens delimitadas e recortes
-│       ├── rotular_vagas.py      # script: rotulagem manual
-│       ├── processamento.py      # pré-processamento, Canny, morfologia, componentes
-│       ├── pipeline.py           # extração de características e classificação
-│       └── __main__.py           # leitura de uma imagem (teste inicial)
-├── tests/
-│   ├── test_leitor_imagens.py
-│   └── test_processamento.py
-├── interface.py              # interface gráfica (testes, pipeline e métricas)
-├── requirements.txt
-└── README.md
+│       ├── __init__.py
+│       ├── __main__.py            # Validação e leitura rápida de imagem
+│       ├── leitor_imagens.py      # Carregamento e validação dimensional
+│       ├── delimitador_vagas.py   # Gerenciamento de coordenadas e extração de ROIs
+│       ├── anotar_vagas.py        # Ferramenta interativa de seleção de vagas
+│       ├── processar_vagas.py     # Script em lote para recortes e delimitações
+│       ├── rotular_vagas.py       # Ferramenta interativa de rotulagem manual
+│       ├── processamento.py       # Operações centrais de PDI e extração de descritores
+│       ├── pipeline.py            # Execução completa do pipeline e classificação
+│       └── experimentos.py        # Suíte de experimentos comparativos e LOIO
+└── tests/
+    ├── test_leitor_imagens.py     # Testes do leitor e dimensões
+    ├── test_delimitador_vagas.py  # Testes de persistência JSON e recorte de ROIs
+    ├── test_processamento.py      # Testes de Canny, morfologia e componentes conexos
+    ├── test_pipeline.py           # Testes de argumentos, painéis e execução end-to-end
+    └── test_experimentos_e_metricas.py # Testes de matriz de confusão, métricas e LOIO
 ```
 
-## Instalação
+---
 
-Na raiz do projeto (Windows):
+## 8. Instalação e Preparação do Ambiente
 
+### Requisitos
+- **Python 3.10 ou superior**
+- Sistema operacional: Linux, macOS ou Windows
+
+### 1. Clonar o repositório
+```bash
+git clone https://github.com/duda-honorato/M1_Pt1.git
+cd M1_Pt1
+```
+
+### 2. Criar e ativar o ambiente virtual
+
+**No Linux / macOS:**
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+**No Windows (CMD / PowerShell):**
 ```bash
 py -m venv .venv
 .venv\Scripts\activate
-py -m pip install -r requirements.txt
 ```
 
-## Execução
+### 3. Instalar as dependências
+```bash
+pip install -r requirements.txt
+```
 
-### Pela interface (recomendado)
+---
+
+## 9. Instruções de Execução
+
+### Opção A — Interface Gráfica Interativa (Recomendado)
+A interface Tkinter reúne execução de testes, pipeline, experimentos e visualização de métricas:
 
 ```bash
-py interface.py
+python interface.py
 ```
+*(No Windows, também é possível executar com `py interface.py`)*
 
-Na janela:
+Recursos da Interface:
+- **Rodar testes:** Dispara a suíte de testes com `pytest` sem travar a interface.
+- **Processar todas as imagens:** Executa o pipeline com os parâmetros da tela e exibe as tabelas de métricas no log.
+- **Rodar experimentos:** Executa os 5 experimentos comparativos e gera as curvas de dispersão.
+- **Executar tudo:** Sequência automática completa (*testes → recortes → pipeline → experimentos*).
+- **Abrir pastas:** Atalhos para visualizar os resultados e recortes gerados.
 
-- **Rodar testes**: executa os testes com pytest.
-- **Processar todas as imagens**: roda o pipeline com os parâmetros da tela.
-- **Testes + processar**: roda os testes e, se passarem, o pipeline.
-- **Abrir resultados**: abre a pasta `data/results`.
+---
 
-Ao final, o log mostra as tabelas de métricas (matriz de confusão, métricas, acertos por imagem, erros e comparação entre atributos). As tabelas também são salvas em `data/results/metricas.txt`.
-
-### Pela linha de comando
-
-Antes, configure o `PYTHONPATH`:
+### Opção B — Execução dos Testes Automatizados
+Graças ao arquivo [`pytest.ini`](pytest.ini), basta executar:
 
 ```bash
-set PYTHONPATH=src          # cmd
-$env:PYTHONPATH="src"       # PowerShell
+pytest -v
 ```
+*(46 testes automatizados cobrindo todos os módulos do projeto)*
 
-Delimitar as vagas manualmente:
+---
 
+### Opção C — Linha de Comando (CLI)
+
+#### 1. Executar o Pipeline Completo de Classificação
 ```bash
-py -m estacionamento.anotar_vagas --input images/input/3.png --annotations annotations/vagas.json --output images/output --quantidade 6
+python -m estacionamento.pipeline \
+  --input images/input \
+  --annotations annotations/vagas.json \
+  --labels annotations/rotulos.csv \
+  --output data/results \
+  --atributo densidade_bordas \
+  --limiar 0.076
 ```
 
-Gerar as imagens delimitadas e os recortes:
-
+#### 2. Executar os Experimentos Comparativos
 ```bash
-py -m estacionamento.processar_vagas --input images/input --annotations annotations/vagas.json --output images/output
+python -m estacionamento.experimentos \
+  --input images/input \
+  --annotations annotations/vagas.json \
+  --labels annotations/rotulos.csv \
+  --output data/experimentos
 ```
 
-Rotular as vagas:
-
+#### 3. Gerar Recortes e Imagens Delimitadas
 ```bash
-py -m estacionamento.rotular_vagas --input images/input --annotations annotations/vagas.json --output annotations/rotulos.csv
+python -m estacionamento.processar_vagas \
+  --input images/input \
+  --annotations annotations/vagas.json \
+  --output images/output
 ```
 
-Executar o pipeline com classificação:
-
+#### 4. Delimitar Novas Vagas (Interativo no OpenCV)
 ```bash
-py -m estacionamento.pipeline --input images/input --annotations annotations/vagas.json --labels annotations/rotulos.csv --output data/results --limiar 0.076
+python -m estacionamento.anotar_vagas \
+  --input images/input/3.png \
+  --annotations annotations/vagas.json \
+  --output images/output \
+  --quantidade 6
 ```
 
-Opções do pipeline: `--atributo`, `--blur`, `--canny-min`, `--canny-max`, `--clahe`, `--sem-morfologia`, `--kernel-fechamento`, `--kernel-abertura` e `--area-minima`.
+---
 
-Executar os testes:
+## 10. Saídas Geradas pelo Projeto
 
-```bash
-py -m pytest -v tests
-```
+Ao executar o pipeline, os seguintes artefatos são gravados em `data/results/`:
+- `caracteristicas.csv`: Tabela com todos os 5 atributos calculados para cada vaga, rótulo real e classe prevista.
+- `parametros.json`: Registro fiel de todos os hiperparâmetros utilizados na execução.
+- `<imagem>_classificada.png`: Imagem original anotada com caixas **verdes (livre)** e **vermelhas (ocupada)**.
+- `intermediarias/<imagem>_<vaga>_etapas.png`: Mosaico lado a lado exibindo a ROI colorida, escala de cinza, bordas de Canny, resultado morfológico e mapa de componentes conexos coloridos.
+- `metricas.txt`: Matriz de confusão, métricas quantitativas, acertos por imagem e lista detalhada de eventuais erros.
 
-### Saídas do pipeline (`data/results/`)
+---
 
-- `caracteristicas.csv`: atributos de cada vaga, rótulo de referência e classe prevista.
-- `parametros.json`: parâmetros, atributo, limiar e imagens usados na execução.
-- `<imagem>_classificada.png`: imagem com as vagas em verde (livre) ou vermelho (ocupada).
-- `intermediarias/<imagem>_<vaga>_etapas.png`: painel com as etapas (ROI, cinza, bordas, morfologia, componentes).
-- `metricas.txt`: tabelas de métricas (gerado pela interface).
+## 11. Limitações Conhecidas e Riscos Técnicos
 
-## Limitações
+- **Contraste de veículos escuros com asfalto:** Carros pretos ou cinza-chumbo sob iluminação uniforme geram poucas bordas de Canny, podendo causar falsos negativos se analisados apenas por densidade de bordas.
+- **Variações extremas de iluminação:** Sombras densas que cubram parcialmente a vaga podem gerar bordas lineares no asfalto.
+- **Dependência de câmera estática:** Coordenadas fixas exigem que a câmera não sofra deslocamentos ou vibrações intensas de vento.
+- **Oclusão e enquadramento:** Veículos estacionados fora das demarcações ou oclusões parciais por árvores ou postes.
 
-- Dependência de vagas previamente delimitadas.
-- Necessidade de recalibrar as coordenadas quando houver mudança de câmera ou perspectiva.
-- Sensibilidade a sombras, iluminação e condições climáticas.
-- Erros com veículos escuros ou de cor semelhante ao piso (poucas bordas).
-- Dificuldade com oclusões e veículos parcialmente posicionados nas vagas.
-- Conjunto pequeno (30 amostras) e sem divisão entre calibração e avaliação.
+---
 
-## Vídeo da M1
+## 12. Plano de Continuidade para a Etapa M3
 
-https://youtu.be/5l5vSYWoiJw
+Para a etapa final (**M3**), o grupo planejou as seguintes ações concretas:
 
-## Uso de inteligência artificial
+| Tarefa | Responsável | Prazo | Evidência de Conclusão |
+|---|---|---|---|
+| **Ampliação do Dataset:** Inclusão de imagens adicionais do PKLot em diferentes climas (chuva, nublado, sol pleno). | João Matheus | 10/11/2026 | Imagens e ground truth expandidos no repositório |
+| **Fusão Multivariada de Características:** Combinação de bordas Canny com canais de cor (HSV) e descritores de textura (GLCM / LBP). | Maria Eduarda | 17/11/2026 | Script de extração e análise de ganho de informação |
+| **Classificadores Aprendidos:** Comparação do limiar simples contra classificadores supervisionados (SVM e Random Forest com scikit-learn). | João Matheus | 24/11/2026 | Matriz de confusão comparativa e curvas ROC |
+| **Detecção e Ajuste Automático de Vagas:** Estabilização de coordenadas em caso de tremor de câmera por detecção de linhas de demarcação. | Scheila | 01/12/2026 | Módulo de alinhamento geométrico |
+| **Consolidação de Relatório Final e Vídeo da M3:** Redação do relatório M3 e gravação da apresentação final. | Todos | 10/12/2026 | `docs/relatorio_m3.md` e vídeo final no YouTube |
 
-Ferramentas de IA foram utilizadas como apoio à revisão textual, à organização da documentação e à discussão de alternativas técnicas.
+---
 
-Na M2, a IA também foi usada como apoio no desenvolvimento, incluindo a sugestão de ajuste das coordenadas das vagas, a definição do limiar pelo ponto médio entre classes e a implementação das tabelas de métricas na interface. As sugestões foram verificadas pelo grupo com a execução do pipeline e dos testes.
+## 13. Vídeos do Projeto
 
-As decisões, implementações e avaliações são de responsabilidade dos integrantes.
+- **Vídeo da Etapa M1 (Apresentação da Proposta):**  
+  [https://youtu.be/5l5vSYWoiJw](https://youtu.be/5l5vSYWoiJw)
+- **Vídeo da Etapa M2 (Demonstração da Implementação e Resultados):**  
+  `[Link não listado do YouTube a ser adicionado após a gravação]`  
+  *Roteiro da apresentação: Evolução desde a M1, demonstração da interface gráfica, execução dos 46 testes com pytest, inspeção dos recortes e saídas intermediárias, análise dos gráficos de experimentos e discussão do plano para M3.*
+
+---
+
+## 14. Uso Ético e Declarado de Inteligência Artificial Generativa
+
+Conforme determinado nas diretrizes da disciplina, declara-se com transparência o uso de modelos de linguagem:
+
+| Ferramenta | Finalidade | Material Produzido ou Modificado | Procedimento de Verificação |
+|---|---|---|---|
+| **Google Antigravity / Claude 3.5 Sonnet / Gemini** | Apoio na estruturação da suíte ampliada de testes unitários (`pytest`), organização técnica de tabelas em Markdown e sugestões de layout da interface gráfica Tkinter. | Arquivos `tests/test_*.py`, seções do `README.md` e formatação do `relatorio_m2.md`. | Todos os testes e scripts foram executados localmente e validados integralmente pelos integrantes da equipe, assegurando domínio completo do código. |
+
+---
+
+## 15. Referências Bibliográficas
+
+1. CANNY, J. A computational approach to edge detection. **IEEE Transactions on Pattern Analysis and Machine Intelligence**, v. PAMI-8, n. 6, p. 679–698, 1986.
+2. DE ALMEIDA, P. R. L.; OLIVEIRA, L. S.; BRITTO JR., A. S.; SILVA JR., E. J.; KOERICH, A. L. PKLot – A robust dataset for parking lot classification. **Expert Systems with Applications**, v. 42, n. 11, p. 4937–4949, 2015.
+3. GONZALEZ, R. C.; WOODS, R. E. **Processamento Digital de Imagens**. 3. ed. São Paulo: Pearson Prentice Hall, 2010.
+4. OPENCV. **OpenCV Documentation**. Disponível em: <https://docs.opencv.org/>. Acesso em: out. 2026.
+5. ZUIDERVELD, K. Contrast limited adaptive histogram equalization. In: HECKBERT, P. (Ed.). **Graphics Gems IV**. San Diego: Academic Press, 1994. p. 474–485.
