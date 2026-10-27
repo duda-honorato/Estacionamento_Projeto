@@ -1,0 +1,22 @@
+{
+    "parametros": {
+        "blur": 5,
+        "canny_min": 50,
+        "canny_max": 150,
+        "usar_clahe": false,
+        "usar_morfologia": true,
+        "kernel_fechamento": 5,
+        "kernel_abertura": 3,
+        "area_minima_componente": 20
+    },
+    "atributo": "densidade_bordas",
+    "limiar": 0.076,
+    "imagens": [
+        "0.png",
+        "1.png",
+        "2.png",
+        "3.png",
+        "4.png"
+    ],
+    "anotacoes": "annotations/vagas.json"
+}
