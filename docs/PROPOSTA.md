@@ -83,7 +83,7 @@ Os retângulos das vagas terminam logo acima da faixa de grama (y = 308), para n
 
 ## 6. Pipeline
 
-Os diagramas estão em [`Diagrama_Pipeline.jpg`](../Diagrama_Pipeline.jpg) (visão geral) e [`Diagrama_Arquitetura.md`](../Diagrama_Arquitetura.md) (detalhado por etapa e por módulo).
+Os diagramas estão em [`Diagrama_Pipeline_M2.md`](../Diagrama_Pipeline_M2.md) (visão geral) e [`Diagrama_Arquitetura_M2.md`](../Diagrama_Arquitetura_M2.md) (detalhado por etapa e por módulo).
 
 | Etapa | Descrição | Módulo |
 |---|---|---|
