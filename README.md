@@ -205,8 +205,8 @@ Estacionamento_Projeto/
 
 ### 1. Clonar o repositório
 ```bash
-git clone https://github.com/duda-honorato/M1_Pt1.git
-cd M1_Pt1
+git clone https://github.com/duda-honorato/Estacionamento_Projeto.git
+cd Estacionamento_Projeto
 ```
 
 ### 2. Criar e ativar o ambiente virtual
