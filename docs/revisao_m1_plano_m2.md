@@ -49,7 +49,7 @@ Preencham os dados abaixo.
 |---|---|
 | Identificação do grupo |Detecção de Vagas Disponíveis em Estacionamento|
 | Integrantes |João Matheus de Oliveira Vieira, Scheila Carolini da Silva Ceresa e Maria Eduarda de Melo Honorato|
-| Repositório avaliado |https://github.com/duda-honorato/M1_Pt1| (renomeado para [https://github.com/duda-honorato/Estacionamento_Projeto.git] na M2)
+| Repositório avaliado |https://github.com/duda-honorato/M1_Pt1 (renomeado para https://github.com/duda-honorato/Estacionamento_Projeto.git na M2)]
 | Commit, versão ou estado da entrega M1 |62d8ecb0a05557ef02242a8514a6f7a0fa469f4d|
 | Documento de feedback consultado |grupo_04.pdf (devolutiva M1)|
 | Data da conferência |19/09/2026|
