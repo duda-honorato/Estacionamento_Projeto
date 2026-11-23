@@ -3,7 +3,6 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![OpenCV](https://img.shields.io/badge/OpenCV-5.x-green.svg)](https://opencv.org/)
 [![pytest](https://img.shields.io/badge/tests-46%20passed-success.svg)](https://pytest.org/)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 Projeto Aplicado Longitudinal desenvolvido no curso de Ciência da Computação na disciplina de **Processamento Digital de Imagens (PDI)** — período **2026-02**.
 
