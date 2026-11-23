@@ -7,7 +7,7 @@
 - Maria Eduarda de Melo Honorato
 - Scheila Carolini da Silva Ceresa
 
-**Repositório:** [https://github.com/duda-honorato/Estacionamento_Projeto.git](https://github.com/duda-honorato/Estacionamento_Projeto.git)
+**Repositório:** [https://github.com/duda-honorato/Estacionamento_Projeto.git](https://github.com/duda-honorato/Estacionamento_Projeto.git).
 **Vídeo de Apresentação M1:** [https://youtu.be/5l5vSYWoiJw](https://youtu.be/5l5vSYWoiJw)  
 **Vídeo de Demonstração M2:** [https://youtu.be/Jp9i_GVVrVQ](https://youtu.be/Jp9i_GVVrVQ)
 
