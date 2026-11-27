@@ -164,7 +164,7 @@ def exp_morfologia(amostras, base):
         for abertura in (3, 5):
             configuracoes.append((
                 f"fech. {fechamento}x{fechamento} + aber. {abertura}x{abertura}",
-                replace(base, kernel_fechamento=fechamento, kernel_abertura=abertura),
+                replace(base, usar_morfologia=True, kernel_fechamento=fechamento, kernel_abertura=abertura),
             ))
 
     resultado = []

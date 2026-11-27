@@ -18,5 +18,5 @@
         "3.png",
         "4.png"
     ],
-    "anotacoes": "annotations/vagas.json"
+    "anotacoes": "annotations\\vagas.json"
 }
