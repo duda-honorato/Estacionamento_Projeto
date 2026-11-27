@@ -1,3 +1,8 @@
+"""
+Se vcs mudarem sem querer um parâmetro no código ou na interface, esse teste quebra. O professor nos orientou:
+N adicionar funcionalidades de interface que não contribuam para a avaliação.
+"""
+
 import json
 from dataclasses import asdict
 from pathlib import Path
