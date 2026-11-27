@@ -349,9 +349,9 @@ Para a etapa final (**M3**), o grupo planejou as seguintes ações concretas:
 Conforme determinado nas diretrizes da disciplina, declara-se com transparência o uso de modelos de linguagem:
 
 | Ferramenta | Finalidade | Material Produzido ou Modificado | Procedimento de Verificação |
-|---|---|---|
-| **Claude (Anthropic)** | Apoio na estruturação da suíte de testes unitários (`pytest`) e organização de tabelas em Markdown. | Arquivos `tests/test_*.py` e seções do `README.md`. | Todos os testes foram executados localmente e revisados pelos integrantes. |
-| **Gemini (Google)** | Sugestões de layout da interface gráfica Tkinter e formatação do relatório. | `interface.py` (layout) e formatação do `relatorio_m2.md`. | Interface testada manualmente e texto revisado pela equipe. |
+|---|---|---|---|
+| Claude (Anthropic) | Apoio na estruturação da suíte de testes unitários (`pytest`) e organização de tabelas em Markdown. | Arquivos `tests/test_*.py` e seções do `README.md`. | Todos os testes foram executados localmente e revisados pelos integrantes. |
+| Gemini (Google) | Sugestões de layout da interface gráfica Tkinter e formatação do relatório. | `interface.py` (layout) e formatação do `relatorio_m2.md`. | Interface testada manualmente e texto revisado pela equipe. |
 
 ---
 
