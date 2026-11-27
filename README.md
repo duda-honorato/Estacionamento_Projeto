@@ -335,8 +335,6 @@ Para a etapa final (**M3**), o grupo planejou as seguintes ações concretas:
 |---|---|---|---|
 | **Ampliação do Dataset:** Inclusão de imagens adicionais do PKLot em diferentes climas (chuva, nublado, sol pleno). | João Matheus | 10/11/2026 | Imagens e ground truth expandidos no repositório |
 | **Fusão Multivariada de Características:** Combinação de bordas Canny com canais de cor (HSV) e descritores de textura (GLCM / LBP). | Maria Eduarda | 17/11/2026 | Script de extração e análise de ganho de informação |
-| **Classificadores Aprendidos:** Comparação do limiar simples contra classificadores supervisionados (SVM e Random Forest com scikit-learn). | João Matheus | 24/11/2026 | Matriz de confusão comparativa e curvas ROC |
-| **Detecção e Ajuste Automático de Vagas:** Estabilização de coordenadas em caso de tremor de câmera por detecção de linhas de demarcação. | Scheila | 01/12/2026 | Módulo de alinhamento geométrico |
 | **Consolidação de Relatório Final e Vídeo da M3:** Redação do relatório M3 e gravação da apresentação final. | Todos | 10/12/2026 | `docs/relatorio_m3.md` e vídeo final no YouTube |
 
 ---
