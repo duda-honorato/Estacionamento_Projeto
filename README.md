@@ -95,6 +95,14 @@ flowchart LR
    - `num_componentes`: Quantidade de componentes conexos válidos na ROI.
 8. **Classificação por Limiar:** Se $\text{densidade\_bordas} \ge 0.076$, a vaga é considerada **ocupada (1)**; caso contrário, **livre (0)**.
 
+### 5.1 Pipeline congelado e baseline
+
+A partir da M3, o pipeline de classificação por descritores está **congelado**: os parâmetros ficam registrados em [`config/baseline_congelado.json`](config/baseline_congelado.json) e são verificados por `tests/test_baseline_congelado.py`. A versão congelada está identificada pela tag `m2-baseline`.
+
+- **Baseline:** `densidade_bordas >= limiar ⇒ ocupada`, com blur 5×5, Canny 50/150, fechamento 5×5, abertura 3×3 e área mínima 20 px.
+- **Calibração:** o limiar é escolhido somente nas imagens de ajuste e aplicado sem alteração nas imagens de avaliação.
+- **Comparação da M3:** o método final (fusão de bordas + cor HSV + textura) é comparado com esse baseline nas mesmas imagens e com as mesmas métricas.
+- **Interface:** `interface.py` é apenas um atalho para executar testes, pipeline e experimentos; não receberá novas funcionalidades.
 ---
 
 ## 6. Resultados Experimentais da M2
