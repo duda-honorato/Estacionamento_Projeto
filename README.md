@@ -2,7 +2,7 @@
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![OpenCV](https://img.shields.io/badge/OpenCV-5.x-green.svg)](https://opencv.org/)
-[![pytest](https://img.shields.io/badge/tests-46%20passed-success.svg)](https://pytest.org/)
+[![pytest](https://img.shields.io/badge/tests-49%20passed-success.svg)](https://pytest.org/)
 
 Projeto Aplicado Longitudinal desenvolvido no curso de Ciência da Computação na disciplina de **Processamento Digital de Imagens (PDI)** — período **2026-02**.
 
@@ -262,7 +262,7 @@ Graças ao arquivo [`pytest.ini`](pytest.ini), basta executar:
 ```bash
 pytest -v
 ```
-*(46 testes automatizados cobrindo todos os módulos do projeto)*
+*(49 testes automatizados cobrindo todos os módulos do projeto)*
 
 ---
 
