@@ -1,0 +1,20 @@
+{
+    "versao": "m2-baseline-congelado",
+    "descricao": "Pipeline de classificação por descritores congelado ao fim da M2. Serve como baseline fixo para a comparação da M3.",
+    "parametros": {
+        "blur": 5,
+        "canny_min": 50,
+        "canny_max": 150,
+        "usar_clahe": false,
+        "usar_morfologia": true,
+        "kernel_fechamento": 5,
+        "kernel_abertura": 3,
+        "area_minima_componente": 20
+    },
+    "classificador": {
+        "atributo": "densidade_bordas",
+        "regra": "densidade_bordas >= limiar -> ocupada (1)",
+        "limiar_m2": 0.076,
+        "calibracao_m3": "o limiar é recalculado apenas no conjunto de ajuste e aplicado sem alteração no conjunto de avaliação"
+    }
+}
